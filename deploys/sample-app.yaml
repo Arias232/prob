@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-example
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-example
+  template:
+    metadata:
+      labels:
+        app: nginx-example
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-example-service
+spec:
+  selector:
+    app: nginx-example
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80

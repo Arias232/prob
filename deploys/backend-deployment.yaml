@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-backend
+  labels:
+    app: notes-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notes-backend
+  template:
+    metadata:
+      labels:
+        app: notes-backend
+    spec:
+      containers:
+      - name: backend
+        image: bariase/simple-notes-backend:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: postgres-creds

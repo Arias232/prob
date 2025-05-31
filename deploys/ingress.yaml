@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notes-app-ingress # Nombre actualizado para claridad
+  namespace: app
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    # Anotaciones de autenticación apuntando a tu oauth2-proxy en el nuevo dominio
+    nginx.ingress.kubernetes.io/auth-url: "https://auth.umg.life/oauth2/auth"
+    nginx.ingress.kubernetes.io/auth-signin: "https://auth.umg.life/oauth2/start?rd=$escaped_request_uri"
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization,X-Auth-Request-Email,X-Auth-Request-Redirect"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - notas.umg.life # Tu dominio para la aplicación de notas
+      secretName: notes-umg-life-tls # cert-manager creará este secret con el certificado
+  rules:
+    - host: notas.umg.life # Tu dominio para la aplicación de notas
+      http:
+        paths:
+          - path: /api # Ruta para el backend de la aplicación de notas
+            pathType: Prefix
+            backend:
+              service:
+                name: notes-backend-svc # El servicio de tu backend de notas
+                port:
+                  number: 80 # El puerto del servicio de tu backend de notas
+          - path: / # Ruta para el frontend de la aplicación de notas
+            pathType: Prefix
+            backend:
+              service:
+                name: notes-frontend-svc # El servicio de tu frontend de notas
+                port:
+                  number: 80 # El puerto del servicio de tu frontend de notas

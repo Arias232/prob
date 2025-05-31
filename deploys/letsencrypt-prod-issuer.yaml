@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Debes reemplazar esto con tu dirección de correo electrónico
+    email: bayron5757@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # SecretUsed to store the ACME account private key
+      name: letsencrypt-prod-account-key
+    # ACME solvers
+    solvers:
+    - http01:
+        ingress:
+          # El Ingress class que usará cert-manager para resolver los desafíos HTTP01
+          # Asegúrate que coincida con el Ingress class de tus Ingresses (nginx)
+          class: nginx

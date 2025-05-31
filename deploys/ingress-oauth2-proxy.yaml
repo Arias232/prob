@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oauth2-proxy-ingress # Nombre actualizado para claridad
+  namespace: app
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/auth-response-headers: "Authorization,X-Auth-Request-Email,X-Auth-Request-Redirect,X-Auth-Request-Access-Token"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.umg.life # Tu dominio para oauth2-proxy
+      secretName: auth-umg-life-tls # cert-manager creará este secret con el certificado
+  rules:
+    - host: auth.umg.life # Tu dominio para oauth2-proxy
+      http:
+        paths:
+          - path: /oauth2(/|$)(.*) # Ruta para los endpoints de oauth2-proxy
+            pathType: ImplementationSpecific # O Prefix si tu Ingress controller lo maneja bien
+            backend:
+              service:
+                name: oauth2-proxy # Nombre del servicio de tu deployment de oauth2-proxy
+                port:
+                  number: 4180 # Puerto donde el servicio oauth2-proxy está escuchando
+---

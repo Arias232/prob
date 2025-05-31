@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: oauth2-proxy
+  name: oauth2-proxy
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      k8s-app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        k8s-app: oauth2-proxy
+    spec:
+      containers:
+      - args:
+        - --provider=google
+        - --session-store-type=redis
+        - --redis-connection-url=redis://redis.app.svc.cluster.local:6379 # Asegúrate que este servicio Redis exista y sea accesible
+        - --cookie-csrf-per-request=false
+        - --cookie-secure=true
+        - --cookie-httponly=true
+        - --cookie-samesite=lax
+        - --cookie-refresh=1h
+        - --cookie-expire=168h
+        - --cookie-domain=.umg.life # Dominio base para las cookies
+        - --whitelist-domain=.umg.life # Dominios permitidos para redirección
+        - --oidc-issuer-url=https://securetoken.google.com/auttt-c0a69 # Tu ID de proyecto de Firebase
+        - --email-domain=*
+        - --redirect-url=https://auth.umg.life/oauth2/callback # URL de callback para oauth2-proxy
+        # El upstream es a dónde oauth2-proxy redirigiría si se accede directamente y no como parte de un flujo de auth de Ingress.
+        # Para auth basada en Ingress, este es menos crítico pero aún necesario.
+        # Puedes apuntarlo a un servicio interno genérico o al frontend de tu app si tiene sentido.
+        - --upstream=http://notes-frontend-svc.app.svc.cluster.local:80 # Ejemplo: apuntando al frontend de notas
+        - --http-address=0.0.0.0:4180
+        - --skip-provider-button=true
+        - --ssl-insecure-skip-verify=true # Considera remover esto en producción si tienes certificados válidos internamente
+        - --pass-user-headers=true
+        - --oidc-jwks-url=https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com
+        - --show-debug-on-error=true
+        - --set-xauthrequest=true
+        - --code-challenge-method=S256
+        - --standard-logging=true
+        - --auth-logging=true
+        - --request-logging=true
+        - --scope=openid profile email
+        - --backend-logout-url=https://auth.umg.life/oauth2/start # URL para iniciar el flujo de logout/login
+        env:
+        - name: OAUTH2_PROXY_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy # Nombre del Secret con tus credenciales de OAuth
+              key: client-id
+        - name: OAUTH2_PROXY_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: client-secret
+        - name: OAUTH2_PROXY_COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth2-proxy
+              key: cookie-secret
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        imagePullPolicy: Always
+        name: oauth2-proxy
+        ports:
+        - containerPort: 4180
+          protocol: TCP

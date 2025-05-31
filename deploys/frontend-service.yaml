@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-frontend-svc
+spec:
+  selector:
+    app: notes-frontend
+  ports:
+  - protocol: TCP
+    port: 80 # Puerto que el LoadBalancer escuchará
+    targetPort: 80 # Puerto del contenedor del frontend
+  type: ClusterIP  # Esto creará un LoadBalancer en DigitalOcean
